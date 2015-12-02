@@ -1,0 +1,53 @@
+package bdd;
+
+/**
+ * Un objet Livre représente 1 ligne de la table qui contient les livres dans la base de la bibliothèque
+ *
+ */
+public class Livre {
+
+	private final int id ;
+	private final String titre, nom_emprunte, nom_reserve ;
+
+	/**
+	 * @param id identifiant du livre
+	 * @param titre titre du livre
+	 */
+	public Livre (int id, String titre) {
+		this.id = id ;
+		this.titre = titre ;
+		this.nom_emprunte = null ;
+		this.nom_reserve = null ;
+	}
+
+	/**
+	 * @param resultSet un objet ResultSet dont le curseur pointe sur une ligne courante, avec une colonne id, une colonne titre, une colonne  nom_emprunte et une colonne nom_reserve
+	 * @throws java.sql.SQLException si on ne peut pas accéder aux attributs attendus de la ligne courante du ResultSet
+	 */
+	public Livre (java.sql.ResultSet resultSet) throws java.sql.SQLException {
+		this.id = resultSet.getInt ("id") ;
+		this.titre = resultSet.getString ("titre") ;
+		this.nom_emprunte = resultSet.getString ("nom_emprunte") ;
+		this.nom_reserve = resultSet.getString ("nom_reserve") ;
+	}
+
+	/**
+	 * @return l'identifiant du livre
+	 */
+	public int getId(){return id ;}
+	
+	/**
+	 * @return le titre du livre
+	 */
+	public String getTitre() {return titre;}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		return
+				getTitre() +
+				" (" + (nom_emprunte == null ? "" : nom_emprunte) + ")" +
+				" (" + (nom_reserve == null ? ""  : nom_reserve)  + ")" ;
+	}
+}

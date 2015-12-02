@@ -1,0 +1,95 @@
+package bdd;
+
+import java.sql.Connection;
+
+/**
+ * Un objet DonneesList est une liste d'objets de type Element
+ * DonneesList est la superclasse des classes qui vont servir à définir des JList attachées à des résultats de requêtes.
+ * @param <Element> un type de donnée qui correspond à 1 ligne résultat d'une requête
+ */
+@SuppressWarnings("serial")
+abstract class DonneesList<Element> extends javax.swing.AbstractListModel<Element> {
+	protected final java.util.ArrayList<Element> lesDonnees = new java.util.ArrayList<Element> () ;
+	protected final Connection connect;
+
+	/**
+	 * @param c connexion à une base de données
+	 */
+	protected DonneesList (Connection c) {
+		this.connect = c ;
+	}
+
+	/* (non-Javadoc)
+	 * @see javax.swing.ListModel#getSize()
+	 */
+	public final int getSize () {
+		return lesDonnees.size () ;
+	}
+
+	/* (non-Javadoc)
+	 * @see javax.swing.ListModel#getElementAt(int)
+	 */
+	public final Element getElementAt(int index) {
+		return lesDonnees.get(index) ;
+	}
+
+	/**
+	 * @param e élément à ajouter à la liste
+	 * permet d'ajouter un élément à la liste de données
+	 */
+	protected final void ajouter(Element e) {
+		lesDonnees.add(e) ;
+	}
+
+
+	/**
+	 * @return un PreparedStatement spécifique à chaque type d'élément (Livre, Personne, ...)
+	 */
+	protected abstract java.sql.PreparedStatement requetePreparee () ;
+
+	/**
+	 * @param resultSet un ResultSet dont le curseur pointe sur une position courante
+	 * @return l'élément créé grâce aux attributs lus sur la ligne courante du ResultSet
+	 * @throws java.sql.SQLException en cas de problème de lecture du ResultSet
+	 */
+	protected abstract Element creerElement(java.sql.ResultSet resultSet)
+			throws java.sql.SQLException ;
+
+
+	/**
+	 * @param resultSet un ResultSet dont le schéma est compatible avec les attributs demandés pour créer un Element
+	 * @throws java.sql.SQLException
+	 * Ajoute à la liste tous les éléments disponibles dans le resultSet (1 élément par ligne), 
+	 * les éléments sont créés avec la méthode creerElement() qui utilise la ligne
+	 *  courante du resultSet, puis la méthode ajouter().
+	 */
+	protected void ajouterTous(java.sql.ResultSet resultSet)
+			throws java.sql.SQLException{
+		//  Ajouter toutes les lignes de 'resultSet'.
+		while (resultSet.next ()) {
+			ajouter(creerElement(resultSet)) ;
+		}
+	}
+
+	/**
+	 * @throws java.sql.SQLException
+	 * refabrique la liste d'Element à partir de la base (rafraichissement)
+	 */
+	public final void recharger () throws java.sql.SQLException {
+		final int AncienneTaille = getSize() ;
+		lesDonnees.clear() ;
+		java.sql.ResultSet resultSet = requetePreparee().executeQuery () ;
+		// ajouter toutes les données du ResultSet dans la liste
+		this.ajouterTous (resultSet) ;
+		//  Clore le ResultSet.
+		resultSet.close () ;
+		//  Valider la transaction
+		this.connect.commit() ;
+		if (AncienneTaille != 0) {
+			fireIntervalRemoved(this, 0, AncienneTaille - 1) ;
+		}
+		if (lesDonnees.size() != 0) {
+			fireContentsChanged(this, 0, lesDonnees.size() - 1) ;
+		}
+	}
+}
